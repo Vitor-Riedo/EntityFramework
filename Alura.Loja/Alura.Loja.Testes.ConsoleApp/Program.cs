@@ -1,10 +1,93 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
 
 namespace Alura.Loja.Testes.ConsoleApp
 {
     class Program
     {
         static void Main(string[] args)
+        {
+            RecuperandoRelacionamento_1_1();
+        }
+
+        static void RecuperandoRelacionamento_1_1()
+        {
+            using (var contexto = new LojaContex())
+            {
+                var cliente = contexto
+                    .Clientes
+                    .Include(c => c.EnderecoDeEntrega)
+                    .FirstOrDefault();
+
+                Console.WriteLine($"Endereço de entrega: {cliente.EnderecoDeEntrega.Logradouro}");
+
+                /*var produto = contexto
+                    .Produtos
+                    .Include(p => p.Compras)        //Após criado relacionamento com compras, agora é possível acessar as compras.
+                    .Where(p => p.Id == 1)
+                    .FirstOrDefault();
+                */
+
+                var produto = contexto
+                                .Produtos
+                                .Where(p => p.Id == 1)
+                                .FirstOrDefault();
+
+                contexto.Entry(produto)
+                    .Collection(p => p.Compras)
+                    .Query()
+                    .Where(c => c.Preco > 1)
+                    .Load();
+
+                Console.WriteLine($"Mostrando as compras do produto {produto.Nome}");
+                foreach (var item in produto.Compras)
+                {
+                    Console.WriteLine(item.Preco);
+                }
+            }
+        }
+
+        static void RecuperandoRelacionamento_N_N()
+        {
+            /*using (var contexto = new LojaContex())
+            {
+                var promocao = new Promocao();
+                promocao.Descricao = "Queima Tudo Ano Novo";
+                promocao.DataInicio = new DateTime(2020, 1, 1);
+                promocao.DataTermino = new DateTime(2020, 1, 31);
+
+                var produtos = contexto
+                    .Produtos
+                    .Where(p => p.Categoria == "Bebidas")
+                    .ToList();
+
+                foreach (var item in produtos)
+                {
+                    promocao.IncluiProduto(item);
+                }
+
+                contexto.Promocoes.Add(promocao);
+                contexto.SaveChanges();
+            }*/
+
+            using (var contexto2 = new LojaContex())
+            {
+                var promocao = contexto2
+                                .Promocoes
+                                .Include(p => p.Produtos)
+                                .ThenInclude(pp => pp.produto)
+                                .FirstOrDefault();
+
+                Console.WriteLine("\nLista de Produtos...");
+                foreach (var item in promocao.Produtos)
+                {
+                    Console.WriteLine(item.produto);
+                }
+            }
+        }
+
+        static void Relacionamento_1_1()
         {
             //Exemplo 1:1
 
